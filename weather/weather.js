@@ -1,6 +1,4 @@
-
-//  Conor McNally - 16325133
-//  News Headlines
+//  Weather API
 //  Server
 
 "use strict";
@@ -29,7 +27,7 @@ function news(req, res) {
         qs: {q: loc},
         headers: {
           'x-rapidapi-host': 'community-open-weather-map.p.rapidapi.com',
-          'x-rapidapi-key': '0dda254da1mshfaf81c9032a7c2ep1f2122jsn019ecc0cc376',
+          'x-rapidapi-key': '',
           useQueryString: true
         }
     };

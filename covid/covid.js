@@ -1,5 +1,3 @@
-
-//  Conor McNally - 16325133
 //  Covid19
 //  Server
 
@@ -34,7 +32,7 @@ function covid(req, res) {
     qs: {'date-format': 'YYYY-MM-DD', format: 'json', date: today, name: location},
     headers: {
         'x-rapidapi-host': 'covid-19-data.p.rapidapi.com',
-        'x-rapidapi-key': '0dda254da1mshfaf81c9032a7c2ep1f2122jsn019ecc0cc376',
+        'x-rapidapi-key': '',
         useQueryString: true
     }
     };
