@@ -1,0 +1,212 @@
+<!-- Conor McNally - 16325133 -->
+<!-- Internet Applications - Assignment 1 -->
+<!-- Client -->
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<div id="covid">
+    <h1>Check Covid Data for any Country</h1>
+    <input v-model="country"placeholder="Enter Country">
+    <button v-on:click="checkCovid">Check Covid Data</button>
+    <p><font size="5">Checking Covid in: <b>{{ country }}</b></font></p>
+    <pre>{{ error }}</pre>
+    <pre>Last Update for {{ country }}: {{ lastUpdate }}</pre>
+    <pre>Confirmed Cases: {{ confirmed }}</pre>
+    <pre>Recovered Cases: {{ recovered }}</pre>
+    <pre>Critical Cases: {{ critical }}</pre>
+    <pre>Total Deaths: {{ deaths }}</pre>
+</div>
+
+<div id="weather">
+  <h1>Check your city's forcast below!</h1>
+  <input type="checkbox" id="day" v-model="daily">
+  <label for="5day">5-Day</label>
+  <input type="checkbox" id="hour" v-model="hourly">
+  <label for="5day">24-Hour</label>
+  <br>
+  <br>
+  <input v-model="specified_city"placeholder="Enter City">
+  <button v-on:click="checkWeather">Check Weather</button>
+
+  <p><font size="5">Checking weather in: <b>{{ city }}{{ country }}</b></font></p>
+  <pre>{{ weather }}</pre>
+</div>
+
+<script>
+
+var covid = new Vue({
+  el: '#covid',
+  data: {
+    country: 'Ireland',
+    error: '',
+    lastUpdate: '',
+    confirmed: '',
+    recovered: '',
+    critical: '',
+    deaths: ''
+  },
+  methods: {
+    checkCovid: checkCovid
+  }
+})
+
+function checkCovid(){
+  console.log("Contacting Server!")
+  let location = this.country.toLowerCase();
+  url = "http://192.168.8.123:3001/covid/" + location; 
+  console.log(url);
+  
+  let prom = fetch(url)
+  prom.then(response => response.json())
+  .then(response => {
+    console.log(response);
+    console.log('Successfully retrieved covid info');
+    covid_data = JSON.parse(response)
+    this.error = ''
+    this.lastUpdate = covid_data[0].lastUpdate
+    this.confirmed = covid_data[0].confirmed
+    this.recovered = covid_data[0].recovered
+    this.critical = covid_data[0].critical
+    this.deaths = covid_data[0].deaths}
+  )
+  .catch(error => {
+    console.log(error);
+    console.log('Error retrieving covid info!');
+    this.error = 'Invalid Entry'
+    this.lastUpdate = ''
+    this.confirmed = ''
+    this.recovered = ''
+    this.critical = ''
+    this.deaths = ''}
+  )
+}
+
+
+var weather = new Vue({
+  el: '#weather',
+  data: {
+    specified_city: 'Trim',
+    city: '',
+    country: '',
+    daily: false,
+    hourly: false,
+    weather: ''
+  },
+  methods: {
+    checkWeather: checkWeather
+  }
+})
+
+function checkWeather(){
+  console.log("Contacting Server!")
+  url = "http://192.168.8.123:3002/weather/" + this.specified_city; 
+  console.log(url);
+  
+  let prom = fetch(url)
+  prom.then(response => response.json())
+  .then(response => {
+    console.log(response);
+    console.log('Successfully Retrieved Weather Info');
+    weather = JSON.parse(response)
+    this.city = (weather.city.name + ',')
+    this.country = weather.city.country
+
+    if((this.daily && this.hourly) || (!this.daily && !this.hourly)){
+      console.log('Neither or both checkboxes checked');
+      this.weather = 'Choose either 5-day or 24-Hour'
+    }
+    else if(this.daily && !this.hourly){
+      console.log('5-day checked');
+      this.weather = parseDaily(weather)
+    }
+    else{
+      console.log('24-hour checked');
+      this.weather = parseHourly(weather)
+    }
+
+  })
+  .catch(error => {
+    console.log(error);
+    console.log('Error Retrieving Weather Info!');
+    this.weather = 'Invalid Entry'
+  })
+}
+
+function parseHourly(info){
+  
+  let readings = new Array(0,0,0,0,0,0,0,0)
+  let temp = new Array(0,0,0,0,0,0,0,0)
+  let wind = new Array(0,0,0,0,0,0,0,0)
+  let rain = new Array(0,0,0,0,0,0,0,0)
+  dayNumber = 0
+  temperature = 0
+  packing = 0
+
+  eightHour = "|-------------------------------|\n"
+  for(let i = 0; i < 8; i++){
+
+    eightHour = eightHour + "|Date:\t\t" + info.list[i].dt_txt.substr(0, 10) + "\t|\n"
+    eightHour = eightHour + "|Time:\t\t" + info.list[i].dt_txt.substr(11, 20) + "\t|\n"    
+    eightHour = eightHour + "|Temp(C):\t" + (info.list[i].main.temp - 273.15).toFixed(2) + "\t\t|\n"
+    eightHour = eightHour + "|Wind(mph):\t" + (info.list[i].wind.speed).toFixed(2) + "\t\t|\n"
+    if(info.list[i].rain != undefined){
+        if((JSON.stringify(info.list[i].rain)).substr(6, 5) != ''){
+            rainfall = parseFloat((JSON.stringify(info.list[i].rain)).substr(6, 5))
+        }
+    }
+    eightHour = eightHour + "|Rainfall(mm):\t" + (rainfall).toFixed(2) + "\t\t|\n"
+    eightHour = eightHour + "|-------------------------------|\n"
+
+  }
+
+  return eightHour
+}
+
+function parseDaily(info){
+
+  let readings = new Array(0,0,0,0,0)
+  let temp = new Array(0,0,0,0,0)
+  let wind = new Array(0,0,0,0,0)
+  let rain = new Array(0,0,0,0,0)
+  dayNumber = 0
+  temperature = 0
+  packing = 0
+
+  prev_day = info.list[0].dt_txt.substr(8, 2)
+
+  fiveDay = "|-------------------------------|\n"
+  for(let i = 0; i < (info.list.length); i++){
+
+    curr_day = info.list[i].dt_txt.substr(8, 2)
+    if(curr_day != prev_day){
+
+        fiveDay = fiveDay + "|Date:\t\t" + info.list[i-1].dt_txt.substr(0, 10) + "\t|\n"
+        fiveDay = fiveDay + "|Temp(C):\t" + ((temp[dayNumber]/readings[dayNumber]) - 273.15).toFixed(2) + "\t\t|\n"
+        fiveDay = fiveDay + "|Wind(mph):\t" + (wind[dayNumber]/readings[dayNumber]).toFixed(2) + "\t\t|\n"
+        fiveDay = fiveDay + "|Rainfall(mm):\t" + (rain[dayNumber]/readings[dayNumber]).toFixed(2) + "\t\t|\n"
+        fiveDay = fiveDay + "|-------------------------------|\n"
+
+        temperature = temperature + ((temp[dayNumber]/readings[dayNumber]) - 273.15)
+        if(rain[dayNumber]/readings[dayNumber] != 0){
+            packing = 1
+        }
+        dayNumber++
+        if(dayNumber > 4){
+            break;
+        }
+    }
+
+    readings[dayNumber]++
+    temp[dayNumber] = temp[dayNumber] + info.list[i].main.temp
+    wind[dayNumber] = wind[dayNumber] + info.list[i].wind.speed
+    if(info.list[i].rain != undefined){
+        if((JSON.stringify(info.list[i].rain)).substr(6, 5) != ''){
+            rainfall = parseFloat((JSON.stringify(info.list[i].rain)).substr(6, 5))
+            rain[dayNumber] = rain[dayNumber] + rainfall
+        }
+    }
+    prev_day = curr_day
+  }
+
+  return fiveDay
+}
+   
+</script>
