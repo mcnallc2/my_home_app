@@ -8,7 +8,7 @@ const port = 3000;
 
 const server = http.createServer((req, res) => {
   res.writeHead(200, {'Content-Type': 'text/html'});
-  fs.readFile('./covid.html', null, function (error, data) {
+  fs.readFile('./index.html', null, function (error, data) {
       if (error) {
           res.writeHead(404);
           res.write('Whoops! File not found!');
